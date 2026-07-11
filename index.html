@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Brain Dump → Plan</title>
+  <style>
+    :root {
+      --bg: #0f1220;
+      --card: #191d33;
+      --card-2: #21264a;
+      --text: #e8eaf5;
+      --muted: #9aa0c3;
+      --accent: #ff9900;      /* AWS orange */
+      --accent-2: #7c5cff;
+      --good: #34d399;
+      --border: #2b3157;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #1c2140 0%, var(--bg) 60%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 40px 20px 80px; }
+    header h1 { font-size: 2rem; margin: 0 0 6px; }
+    header h1 .accent { color: var(--accent); }
+    header p { color: var(--muted); margin: 0 0 28px; }
+    textarea {
+      width: 100%; min-height: 170px; resize: vertical;
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-radius: 12px;
+      padding: 16px; font-size: 1rem; font-family: inherit;
+    }
+    textarea:focus { outline: none; border-color: var(--accent-2); }
+    .row { display: flex; gap: 12px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+    button {
+      background: var(--accent); color: #1a1300; border: none;
+      padding: 13px 22px; font-size: 1rem; font-weight: 700;
+      border-radius: 10px; cursor: pointer; transition: transform .05s ease, opacity .2s;
+    }
+    button:hover { opacity: .92; }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); font-weight: 500;
+    }
+    .status { color: var(--muted); font-size: .9rem; }
+    .error {
+      margin-top: 18px; padding: 14px 16px; border-radius: 10px;
+      background: #3a1730; border: 1px solid #7a2b52; color: #ffc7dd;
+    }
+    #results { margin-top: 32px; }
+    .summary {
+      background: linear-gradient(120deg, #241b3d, #1a2340);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 18px 20px; margin-bottom: 22px;
+    }
+    .summary .label { color: var(--accent); font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; }
+    .do-first {
+      display: inline-block; margin-top: 10px; padding: 6px 12px;
+      background: rgba(52,211,153,.14); color: var(--good);
+      border: 1px solid rgba(52,211,153,.4); border-radius: 999px; font-weight: 600; font-size: .92rem;
+    }
+    .task {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 16px 18px; margin-bottom: 12px;
+      display: grid; grid-template-columns: 44px 1fr auto; gap: 14px; align-items: start;
+    }
+    .task.top { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+    .rank {
+      width: 44px; height: 44px; border-radius: 10px;
+      display: grid; place-items: center; font-weight: 800; font-size: 1.1rem;
+      background: var(--card-2); color: var(--accent);
+    }
+    .task h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .meta { color: var(--muted); font-size: .85rem; margin-bottom: 6px; }
+    .chip {
+      display: inline-block; padding: 2px 9px; border-radius: 999px;
+      background: var(--card-2); border: 1px solid var(--border);
+      font-size: .76rem; margin-right: 6px; color: var(--text);
+    }
+    .reasoning { color: var(--muted); font-size: .9rem; margin: 4px 0 0; }
+    .score { text-align: right; min-width: 90px; }
+    .score .num { font-size: 1.5rem; font-weight: 800; }
+    .score .lbl { color: var(--muted); font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; }
+    .bars { font-size: .78rem; color: var(--muted); margin-top: 4px; white-space: nowrap; }
+    footer { margin-top: 40px; color: var(--muted); font-size: .82rem; text-align: center; }
+    a { color: var(--accent-2); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Brain Dump <span class="accent">→</span> Plan</h1>
+      <p>Empty your head. Get back a prioritized action plan — ranked by urgency × impact. Powered by Amazon Bedrock (Nova).</p>
+    </header>
+
+    <textarea id="dump" placeholder="Just type everything on your mind... e.g.&#10;&#10;ugh need to call the dentist, finish the Q3 deck for Thursday, mom's birthday is coming up, sign up for the gym, reply to Sarah's email, taxes due soon, buy groceries, fix the leaky faucet, book flights for the conference"></textarea>
+
+    <div class="row">
+      <button id="go">✨ Make my plan</button>
+      <button id="sample" class="ghost">Try an example</button>
+      <span id="status" class="status"></span>
+    </div>
+
+    <div id="error" class="error" style="display:none"></div>
+    <div id="results"></div>
+
+    <footer>
+      Built for the AWS Weekend Challenge · Lambda + Bedrock Nova + Amplify Hosting
+    </footer>
+  </div>
+
+  <script>
+    // ⬇️ After you deploy the Lambda, paste your Function URL here.
+    const API_URL = "https://v82ffe5y56.execute-api.us-east-1.amazonaws.com/";
+
+    const $ = (id) => document.getElementById(id);
+    const dump = $("dump"), goBtn = $("go"), sampleBtn = $("sample");
+    const statusEl = $("status"), errorEl = $("error"), results = $("results");
+
+    const SAMPLE = "ugh need to call the dentist about that filling, finish the Q3 deck for the Thursday review, mom's birthday is next week need a gift, keep meaning to sign up for the gym, reply to Sarah's email from Monday, quarterly taxes due soon, out of groceries, the kitchen faucet is leaking, book flights for the October conference before prices jump, and I should really back up my laptop";
+
+    sampleBtn.onclick = () => { dump.value = SAMPLE; dump.focus(); };
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => (
+        { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+      ));
+    }
+
+    function render(plan) {
+      const tasks = Array.isArray(plan.tasks) ? plan.tasks : [];
+      let html = "";
+      if (plan.summary || plan.do_first) {
+        html += '<div class="summary">';
+        html += '<div class="label">Your plan</div>';
+        if (plan.summary) html += "<div>" + esc(plan.summary) + "</div>";
+        if (plan.do_first) html += '<div class="do-first">▶ Do first: ' + esc(plan.do_first) + "</div>";
+        html += "</div>";
+      }
+      tasks.forEach((t, i) => {
+        const top = i === 0 ? " top" : "";
+        html += '<div class="task' + top + '">';
+        html += '<div class="rank">' + (i + 1) + "</div>";
+        html += "<div>";
+        html += "<h3>" + esc(t.title) + "</h3>";
+        html += '<div class="meta">';
+        html += '<span class="chip">' + esc(t.category || "General") + "</span>";
+        if (t.time_estimate) html += '<span class="chip">⏱ ' + esc(t.time_estimate) + "</span>";
+        html += "</div>";
+        if (t.reasoning) html += '<p class="reasoning">' + esc(t.reasoning) + "</p>";
+        html += "</div>";
+        html += '<div class="score">';
+        html += '<div class="num">' + esc(t.priority_score) + "</div>";
+        html += '<div class="lbl">priority</div>';
+        html += '<div class="bars">U ' + esc(t.urgency) + " · I " + esc(t.impact) + "</div>";
+        html += "</div></div>";
+      });
+      results.innerHTML = html;
+    }
+
+    async function submit() {
+      const text = dump.value.trim();
+      errorEl.style.display = "none";
+      results.innerHTML = "";
+      if (!text) { dump.focus(); return; }
+      if (API_URL.startsWith("REPLACE_")) {
+        errorEl.textContent = "Set API_URL in index.html to your Lambda Function URL first.";
+        errorEl.style.display = "block";
+        return;
+      }
+
+      goBtn.disabled = true;
+      statusEl.textContent = "Thinking… organizing your dump into a plan.";
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ brain_dump: text }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || ("Request failed (" + res.status + ")"));
+        render(data);
+        statusEl.textContent = (data.tasks ? data.tasks.length : 0) + " tasks prioritized.";
+      } catch (err) {
+        errorEl.textContent = "😬 " + err.message;
+        errorEl.style.display = "block";
+        statusEl.textContent = "";
+      } finally {
+        goBtn.disabled = false;
+      }
+    }
+
+    goBtn.onclick = submit;
+    // Cmd/Ctrl + Enter to submit.
+    dump.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") submit();
+    });
+  </script>
+</body>
+</html>
