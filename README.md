@@ -15,8 +15,8 @@ organizing. That's the twist.
 Four AWS services, all comfortably in the **Free Tier**:
 
 ```
-   Browser         API Gateway         AWS Lambda            Amazon Bedrock
-  ┌──────────┐  POST   ┌──────────┐       ┌───────────────┐ Conv.   ┌──────────────┐
+   Browser              API Gateway         AWS Lambda            Amazon Bedrock Conv.
+  ┌──────────┐  POST   ┌──────────┐       ┌───────────────┐         ┌──────────────┐
  │ index.html │ ────▶ │ HTTP API   │ ──▶ │ lambda_function │ ────▶ │  Nova Lite     │
  │ (Amplify)  │ ◀──── │ (public)   │ ◀── │  (Converse)     │ ◀──── │ (foundation    │
   └──────────┘  JSON   └──────────┘       └───────────────┘  plan  │   model)       │
