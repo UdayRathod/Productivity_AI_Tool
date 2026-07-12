@@ -16,11 +16,11 @@ Four AWS services, all comfortably in the **Free Tier**:
 
 ```
    Browser         API Gateway         AWS Lambda            Amazon Bedrock
- ┌──────────┐  POST ┌──────────┐     ┌───────────────┐ Conv. ┌──────────────┐
- │ index.html│ ────▶ │ HTTP API │ ──▶ │ lambda_function│ ────▶ │  Nova Lite    │
- │ (Amplify) │ ◀──── │ (public) │ ◀── │  (Converse)    │ ◀──── │ (foundation   │
- └──────────┘  JSON  └──────────┘     └───────────────┘  plan  │   model)      │
-                                                                 └──────────────┘
+  ┌──────────┐  POST   ┌──────────┐       ┌───────────────┐ Conv.   ┌──────────────┐
+ │ index.html │ ────▶ │ HTTP API   │ ──▶ │ lambda_function │ ────▶ │  Nova Lite     │
+ │ (Amplify)  │ ◀──── │ (public)   │ ◀── │  (Converse)     │ ◀──── │ (foundation    │
+  └──────────┘  JSON   └──────────┘       └───────────────┘  plan  │   model)       │
+                                                                    └──────────────┘
 ```
 
 - **Amazon Bedrock (Nova Lite)** — the LLM that turns the dump into a plan.
@@ -38,14 +38,11 @@ No database, no auth, no servers to manage.
 
 ```
 .
-├── backend/
-│   └── lambda_function.py   # Lambda handler → Bedrock Converse API
-├── frontend/
-│   └── index.html           # self-contained single-page UI
-├── infra/
-│   ├── deploy.sh            # creates role + Lambda + public HTTP API
-│   ├── trust-policy.json    # Lambda assume-role trust
-│   └── bedrock-policy.json  # permission to invoke Nova
+├── lambda_function.py   # Lambda handler → Bedrock Converse API
+├── index.html           # self-contained single-page UI  
+├── deploy.sh            # creates role + Lambda + public HTTP API
+├── trust-policy.json    # Lambda assume-role trust
+├── bedrock-policy.json  # permission to invoke Nova
 └── README.md
 ```
 
@@ -104,7 +101,7 @@ aws bedrock list-foundation-models --region us-east-1 \
 ## Step 3 — Deploy the backend
 
 ```bash
-./infra/deploy.sh
+./deploy.sh
 ```
 
 This creates the IAM role, deploys the Lambda, stands up a public HTTP API, and
@@ -125,7 +122,7 @@ You should get back JSON with `summary`, `do_first`, and a sorted `tasks` array.
 
 ## Step 4 — Wire up the frontend
 
-Open `frontend/index.html` and set the constant near the bottom:
+Open `index.html` and set the constant near the bottom:
 
 ```js
 const API_URL = "https://<your-api-id>.execute-api.us-east-1.amazonaws.com/";
@@ -136,7 +133,7 @@ to the API endpoint printed in Step 3.
 Test locally before hosting:
 
 ```bash
-cd frontend && python3 -m http.server 8000
+python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
@@ -149,7 +146,7 @@ cd frontend && python3 -m http.server 8000
 1. Open the **AWS Amplify** console → **Create new app** → **Deploy without Git**.
 2. Zip the frontend and upload it:
    ```bash
-   cd frontend && zip -r ../site.zip index.html && cd ..
+   zip -r ../site.zip index.html && cd ..
    ```
    Drag `site.zip` into the Amplify uploader.
 3. Amplify gives you a public URL like `https://main.xxxx.amplifyapp.com`. Done.
@@ -175,8 +172,8 @@ static HTML file.
 Set `MODEL_ID` before deploying to pick a different Nova model:
 
 ```bash
-MODEL_ID="us.amazon.nova-micro-v1:0" ./infra/deploy.sh   # cheapest/fastest
-MODEL_ID="us.amazon.nova-pro-v1:0"   ./infra/deploy.sh   # highest quality
+MODEL_ID="us.amazon.nova-micro-v1:0" ./deploy.sh   # cheapest/fastest
+MODEL_ID="us.amazon.nova-pro-v1:0"   ./deploy.sh   # highest quality
 ```
 
 ---
